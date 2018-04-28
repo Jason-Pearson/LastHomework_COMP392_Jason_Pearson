@@ -77,7 +77,7 @@
                 this.spotLightWidth = -436;
                 this.spotLightHeight = 183;
                 this.spotLightLength = 150;
-                this.spotLightRadius = 2;
+                //this.spotLightRadius = 2;
                 this.cameraPX = 107;
                 this.cameraPY = 500;
                 this.cameraPZ = -12;
@@ -93,6 +93,17 @@
                 //this.planeRX = 0;
                 this.planeRY = 0;
                 this.planeRZ = 0;
+
+                //Morph Influence/ Update Function
+                this.influence = 0;
+                this.influence1 = 0;
+
+
+                this.update = function() {
+                    cube.morphTargetInfluences[0] = controls.influence;
+                    cube.morphTargetInfluences[1] = controls.influence1;
+
+                };
             };
 
             var gui = new dat.GUI();
@@ -109,9 +120,7 @@
             gui.add(controls, 'spotLightLength', -1000, 1000).onChange(() => {
                 spotLight.position.z = controls.spotLightLength;
             });
-            gui.add(controls, 'spotLightRadius', -1000, 1000).onChange(() => {
-                spotLight.radius = controls.spotLightLength;
-            });
+
             //Camera
             gui.add(controls, 'cameraPX', -1000, 1000)
             gui.add(controls, 'cameraPY', -1000, 1000)
@@ -154,22 +163,107 @@
             gui.add(controls, 'planeRZ', -10, 10).onChange(() => {
                 plane.rotation.z = controls.planeRZ;
             });
+            //Morph Control
+            gui.add(controls, 'influence', 0, 1).step(0.01).onChange(function(value) {
+                cube.morphTargetInfluences[0] = value;
+            });
+            //gui.add(controls, 'Morph2', 0, 1).onChange(controls.update);
+
 
             // model from http://www.thingiverse.com/thing:69709
             var loader = new THREE.ColladaLoader();
 
             var mesh;
 
+            //Morph Target -----
+            var cubeTarget = new THREE.BoxGeometry(8, 2, 8);
+            var cubeTarget1 = new THREE.BoxGeometry(2, 10, 2);
+            var cubeGeometry = new THREE.BoxGeometry(50, 50, 50);
+            var cubeMaterial = new THREE.MeshLambertMaterial({
+                morphTargets: true,
+                color: 0xff0000
+            });
+
+            /*for (var i = 0; i < 8; i++) {
+
+                var vertices = [];
+
+                for (var v = 0; v < geometry.vertices.length; v++) {
+
+                    vertices.push(cubeGeometry.vertices[v].clone());
+
+                    if (v === i) {
+
+                        vertices[vertices.length - 1].x *= 2;
+                        vertices[vertices.length - 1].y *= 2;
+                        vertices[vertices.length - 1].z *= 2;
+
+                    }
+
+                }
+
+                cubeGeometry.morphTargets.push({
+                    name: "target" + i,
+                    vertices: vertices
+                });
+
+            }*/
+
+
+            cubeGeometry.morphTargets[0] = {
+                name: 't1',
+                vertices: cubeTarget.vertices
+            };
+            cubeGeometry.morphTargets[1] = {
+                name: 't2',
+                vertices: cubeTarget1.vertices
+            };
+
+
+            cubeGeometry.computeMorphNormals();
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+
             loader.load("../assets/models/dae/fluffy-cloud-mane.dae", function(result) {
                 mesh = result.scene.children[0].clone();
-                //mesh.geometry.verticesNeedUpdate = true;
+                var meshGeo = mesh.clone().geometry;
+                //mesh.vertices.update = true;
                 //mesh.geometry.normalsNeedUpdate = true;
+                //var geo = mesh.geometry;
+                var mat = new THREE.MeshLambertMaterial({
+                    morphTargets: true
+                        //color: 0xff0000
+                });
+                //mesh = new THREE.Mesh(meshGeo, cubeMaterial);
+                //mesh.geometry.Set(cubeGeometry);
+                //mesh.material = mat;
+                //mesh.material.set(mat);
+
+                //mesh.MeshLambertMaterial.morphTargets = true;
                 mesh.scale.set(4, 4, 4);
                 mesh.rotation.x = -Math.PI / 2;
                 mesh.castShadow = true;
                 mesh.receiveShadow = false;
+
+                //Morph Target Array set
+                /*mesh.morphTargets[0] = {
+                    name: 't1',
+                    vertices: cubeTarget.vertices
+                };*/
+                /*mesh.geometry.morphTargets[1] = {
+                    name: 't1',
+                    vertices: cubeTarget1.vertices
+                };*/
+
+                //mesh.geometry.computeMorphNormals(); //Morph NORMALS
+
                 scene.add(mesh);
             });
+
+            cube.position.x = 45;
+            cube.position.y = 20;
+            cube.position.z = 50;
+            scene.add(cube);
+
 
             plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
             plane.scale.x = 100;
@@ -178,6 +272,8 @@
             plane.receiveShadow = true;
 
             scene.add(plane);
+
+
             //plane.receiveShadow = true;
 
             //var loader = new THREE.ColladaLoader();
@@ -218,6 +314,7 @@
                 camera.position.x = controls.cameraPX;
                 camera.position.y = controls.cameraPY;
                 camera.position.z = controls.cameraPZ;
+                //mesh.material.Set(cubeMaterial);
 
                 //mesh.scale.set(controls.modelPX, controls.modelPY, controls.modelPZ);
                 //mesh.position.x = controls.modelPX;
