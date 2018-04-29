@@ -3,7 +3,7 @@
 <html>
 
 <head>
-    <title>LastHomework_COMP392_Jason_Pearson - Apr 27, 2018 </title>
+    <title>LastHomework_COMP392_Jason_Pearson - Apr 29, 2018 </title>
     <script type="text/javascript" src="../libs/three.js"></script>
     <script type="text/javascript" src="../libs/PLYLoader.js"></script>
 
@@ -39,6 +39,7 @@
 
         // create a camera, which defines where we're looking at.
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var mouseDown = false;
 
         // create a render and set the size
         var webGLRenderer = new THREE.WebGLRenderer();
@@ -81,16 +82,16 @@ scene.add( ambient );
 
         // add the output of the renderer to the html element
         document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+        document.addEventListener('mousedown', onDocumentMouseDown, false);
 
-        // call the render function
         var step = 0;
-       var mesh = new THREE.Object3D();
+        var mesh = new THREE.Object3D();
         var loadedGeometry;
 
         // setup the control gui
         var controls = new function() {
                 //this.keyframe = 0;
-                this.Flatten = true;
+                //this.updateVertices = true;
                 
                 this.spotLightColor = "#ffffff";
                 this.spotLightWidth = -100;
@@ -125,8 +126,8 @@ scene.add( ambient );
                 };*/
             };
 
-var gui = new dat.GUI();
-gui.addColor(controls, 'spotLightColor').onChange((c) => {
+            var gui = new dat.GUI();
+            gui.addColor(controls, 'spotLightColor').onChange((c) => {
                 spotLight.color = new THREE.Color(c);
             });
             gui.add(controls, 'spotLightWidth', -100, 100).onChange(() => {
@@ -187,11 +188,11 @@ gui.addColor(controls, 'spotLightColor').onChange((c) => {
             gui.add(controls, 'planeRZ', -10, 10).onChange(() => {
                 plane.rotation.z = controls.planeRZ;
             });
-            gui.add(controls, 'Flatten').onChange((toggle) => {
-                //document.addEventListener('mousedown', onDocumentMouseDown, toggle);
-                });
+            //gui.add(controls, 'updateVertices').onChange((toggle) => {
+              //  mesh.geometry.verticesNeedUpdate = toggle;
+                //});
 
-
+//OnClick Event - To stop aninmation/ have raycast acknowledge the model
  
 
 
@@ -209,6 +210,9 @@ gui.addColor(controls, 'spotLightColor').onChange((c) => {
 
 
         var onUpdate = function () {
+
+            if (mouseDown == true)
+            {
             var count = 0;
             var pos = this.pos;
 
@@ -217,6 +221,7 @@ gui.addColor(controls, 'spotLightColor').onChange((c) => {
                 mesh.geometry.vertices[count++].set(e.x, newY, e.z);
                 mesh.geometry.verticesNeedUpdate = true;
             });
+            }
         };
 
         tween.onUpdate(onUpdate);
@@ -235,7 +240,6 @@ gui.addColor(controls, 'spotLightColor').onChange((c) => {
             });
 
             mesh = new THREE.Mesh(geometry, material);
-            mesh.sortParticles = true;
 
             tween.start();
             scene.add(mesh);
@@ -250,6 +254,7 @@ var plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
 
             scene.add(plane);
         render();
+
 function createMesh(geom) {
 
                 // assign two materials
@@ -311,6 +316,24 @@ function createMesh(geom) {
 
             return stats;
         }
+
+        function onDocumentMouseDown(event) {
+//console.log(event);
+var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+vector = vector.unproject(camera);
+
+var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+//console.log(raycaster);
+var intersects = raycaster.intersectObjects([mesh]);
+
+if (intersects.length > 0) {
+
+    console.log(intersects[0].length);
+        mouseDown = !mouseDown;
+        console.log(mouseDown);
+
+}
+}
     }
     window.onload = init;
 </script>
