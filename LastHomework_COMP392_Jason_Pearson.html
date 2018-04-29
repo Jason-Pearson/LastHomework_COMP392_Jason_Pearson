@@ -95,7 +95,7 @@
                 this.planeRZ = 0;
 
                 //Morph Influence/ Update Function
-                this.influence = 0;
+                /*this.influence = 0;
                 this.influence1 = 0;
 
 
@@ -103,7 +103,7 @@
                     cube.morphTargetInfluences[0] = controls.influence;
                     cube.morphTargetInfluences[1] = controls.influence1;
 
-                };
+                };*/
             };
 
             var gui = new dat.GUI();
@@ -164,25 +164,25 @@
                 plane.rotation.z = controls.planeRZ;
             });
             //Morph Control
-            gui.add(controls, 'influence', 0, 1).step(0.01).onChange(function(value) {
+            /*gui.add(controls, 'influence', 0, 1).step(0.01).onChange(function(value) {
                 cube.morphTargetInfluences[0] = value;
             });
-            //gui.add(controls, 'Morph2', 0, 1).onChange(controls.update);
+            gui.add(controls, 'Morph2', 0, 1).onChange(controls.update);*/
 
 
-            // model from http://www.thingiverse.com/thing:69709
+            // model from https://clara.io/view/1a5cdc65-d1e2-4e7d-998f-a75288fbe3b4
             var loader = new THREE.ColladaLoader();
 
             var mesh;
 
             //Morph Target -----
-            var cubeTarget = new THREE.BoxGeometry(8, 2, 8);
+            /*var cubeTarget = new THREE.BoxGeometry(8, 2, 8);
             var cubeTarget1 = new THREE.BoxGeometry(2, 10, 2);
             var cubeGeometry = new THREE.BoxGeometry(50, 50, 50);
             var cubeMaterial = new THREE.MeshLambertMaterial({
                 morphTargets: true,
                 color: 0xff0000
-            });
+            });*/
 
             /*for (var i = 0; i < 8; i++) {
 
@@ -210,7 +210,7 @@
             }*/
 
 
-            cubeGeometry.morphTargets[0] = {
+            /*cubeGeometry.morphTargets[0] = {
                 name: 't1',
                 vertices: cubeTarget.vertices
             };
@@ -218,10 +218,8 @@
                 name: 't2',
                 vertices: cubeTarget1.vertices
             };
-
-
             cubeGeometry.computeMorphNormals();
-            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);*/
 
             loader.load("../assets/models/dae/fluffy-cloud-mane.dae", function(result) {
                 mesh = result.scene.children[0].clone();
@@ -259,10 +257,10 @@
                 scene.add(mesh);
             });
 
-            cube.position.x = 45;
+            /*cube.position.x = 45;
             cube.position.y = 20;
             cube.position.z = 50;
-            scene.add(cube);
+            scene.add(cube);*/
 
 
             plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
