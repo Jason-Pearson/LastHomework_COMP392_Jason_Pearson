@@ -6,9 +6,11 @@
     <title>LastHomework_COMP392_Jason_Pearson - Apr 27, 2018</title>
     <script type="text/javascript" src="../libs/three.js"></script>
     <script type="text/javascript" src="../libs/ColladaLoader.js"></script>
+	<script type="text/javascript" src="../libs/OrbitControls.js"></script>
 
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/Projector.js"></script>    
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -28,22 +30,30 @@
 
     <!-- Javascript code that runs our Three.js examples -->
     <script type="text/javascript">
+
+    //Global Variables
+   var stats, scene,webGLRenderer, camera, projector;
+   var spotLight, spotLightHelper, shadowCameraHelper;
         // once everything is loaded, we run our Three.js stuff.
         function init() {
 
-            var stats = initStats();
+             stats = initStats();
 
             // create a scene, that will hold all our elements such as objects, cameras and lights.
-            var scene = new THREE.Scene();
+             scene = new THREE.Scene();
 
             // create a camera, which defines where we're looking at.
-            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
 
             // create a render and set the size
-            var webGLRenderer = new THREE.WebGLRenderer();
+            webGLRenderer = new THREE.WebGLRenderer();
             webGLRenderer.setClearColor(new THREE.Color(0xcccccc, 1.0));
             webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
             webGLRenderer.shadowMapEnabled = true;
+            webGLRenderer.shadowMapType = THREE.PCFSoftShadowMap;
+//renderer.gammaInput = true;
+//			renderer.gammaOutput = true;
             //webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
             // position and point the camera to the center of the scene
@@ -52,31 +62,63 @@
             camera.position.z = 50;
             camera.lookAt(new THREE.Vector3(55, 25, 0));
 
-            // add spotlight for the shadows
-            var spotLight = new THREE.SpotLight(0xffffff);
-            spotLight.position.set(150, 150, 150);
-            spotLight.intensity = 2;
-            spotLight.castShadow = true; // default false
+            //create a projector for Mouse EventHandlers
+            var projector = new THREE.Projector();
+            //document.addEventListener('mousedown', onDocumentMouseDown, true);
+            //document.addEventListener('mousemove', onDocumentMouseMove, false);
+            //document.addEventListener('mouseover', onDocumentMouseOver, false);
 
+            // add spotlight for the shadows
+            spotLight = new THREE.SpotLight(0xffffff);
+            spotLight.position.set(-46, 279, 41);
+            spotLight.intensity = 5;
+            spotLight.angle = Math.PI / 4;
+				spotLight.penumbra = 0.05;
+				spotLight.decay = 2;
+				spotLight.distance = 200;
+
+            spotLight.castShadow = true; // default false
+spotLight.shadowDarkness = 1;
+spotLight.shadowCameraVisible = true;
+
+//spotLight.shadowMapSize.width = 1024;
+				//spotLight.shadowMapSize.height = 1024;
+				//spotLight.shadowCamera.near = 10;
+				//spotLight.shadowCamera.far = 200;
             scene.add(spotLight);
             //Create a helper for the shadow camera (optional)
-            var spotLightHelper = new THREE.SpotLightHelper(spotLight);
+            spotLightHelper = new THREE.SpotLightHelper(spotLight);
             scene.add(spotLightHelper);
+
+            var ambient = new THREE.AmbientLight( 0xaaaaaa, 0.1 );
+				scene.add( ambient );
+///#region LightShadows
             //Set up shadow properties for the light
             //light.shadow.mapSize.width = 512; // default
             //light.shadow.mapSize.height = 512; // default
             //light.shadow.camera.near = 0.5; // default
             //light.shadow.camera.far = 500 // default
-
+///#endregion
             // add the output of the renderer to the html element
-            document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+           // document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
             var plane;
-
+            var step = 0;
+            var Flatten = true;
+/*
+                var orbControls = new THREE.OrbitControls(camera, webGLRenderer.domElement);
+				orbControls.addEventListener( 'change', render );
+				orbControls.minDistance = 20;
+				orbControls.maxDistance = 500;
+				orbControls.enablePan = false;
+*/
             var controls = new function() {
+                //this.keyframe = 0;
+                this.Flatten = true;
+                
                 this.spotLightColor = "#ffffff";
-                this.spotLightWidth = -436;
-                this.spotLightHeight = 183;
-                this.spotLightLength = 150;
+                this.spotLightWidth = -46;
+                this.spotLightHeight = 279;
+                this.spotLightLength = 41;
                 //this.spotLightRadius = 2;
                 this.cameraPX = 107;
                 this.cameraPY = 500;
@@ -93,7 +135,7 @@
                 //this.planeRX = 0;
                 this.planeRY = 0;
                 this.planeRZ = 0;
-
+///#region MorphViaCube_Controls.Variables
                 //Morph Influence/ Update Function
                 /*this.influence = 0;
                 this.influence1 = 0;
@@ -102,7 +144,7 @@
                 this.update = function() {
                     cube.morphTargetInfluences[0] = controls.influence;
                     cube.morphTargetInfluences[1] = controls.influence1;
-
+///#endregion
                 };*/
             };
 
@@ -123,7 +165,7 @@
 
             //Camera
             gui.add(controls, 'cameraPX', -1000, 1000)
-            gui.add(controls, 'cameraPY', -1000, 1000)
+            gui.add(controls, 'cameraPY', -2000, 2000)
             gui.add(controls, 'cameraPZ', -1000, 1000)
                 //Model Controls
             gui.add(controls, 'modelPX', -500, 500).onChange(() => {
@@ -163,18 +205,23 @@
             gui.add(controls, 'planeRZ', -10, 10).onChange(() => {
                 plane.rotation.z = controls.planeRZ;
             });
-            //Morph Control
+            gui.add(controls, 'Flatten').onChange((toggle) => {
+                //document.addEventListener('mousedown', onDocumentMouseDown, toggle);
+                });
+                
+///#region MorphViaCube_Controls           //Morph Control
             /*gui.add(controls, 'influence', 0, 1).step(0.01).onChange(function(value) {
                 cube.morphTargetInfluences[0] = value;
             });
             gui.add(controls, 'Morph2', 0, 1).onChange(controls.update);*/
-
+///#endregion
 
             // model from https://clara.io/view/1a5cdc65-d1e2-4e7d-998f-a75288fbe3b4
-            var loader = new THREE.ColladaLoader();
+            //var loader = new THREE.ColladaLoader();
 
-            var mesh;
-
+            //var mesh;
+            
+///#region MorphViaCube_Variables_Vertices
             //Morph Target -----
             /*var cubeTarget = new THREE.BoxGeometry(8, 2, 8);
             var cubeTarget1 = new THREE.BoxGeometry(2, 10, 2);
@@ -220,28 +267,30 @@
             };
             cubeGeometry.computeMorphNormals();
             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);*/
+///#endregion
 
-            loader.load("../assets/models/dae/fluffy-cloud-mane.dae", function(result) {
+            /*loader.load("../assets/models/dae/n64.dae", function(result) {
                 mesh = result.scene.children[0].clone();
                 var meshGeo = mesh.clone().geometry;
                 //mesh.vertices.update = true;
                 //mesh.geometry.normalsNeedUpdate = true;
                 //var geo = mesh.geometry;
-                var mat = new THREE.MeshLambertMaterial({
-                    morphTargets: true
-                        //color: 0xff0000
-                });
+               var mat = new THREE.MeshLambertMaterial(
+                    {
+                        morphTargets: true,
+                        //vertexColors: THREE.FaceColors
+                    });                
                 //mesh = new THREE.Mesh(meshGeo, cubeMaterial);
                 //mesh.geometry.Set(cubeGeometry);
                 //mesh.material = mat;
                 //mesh.material.set(mat);
 
-                //mesh.MeshLambertMaterial.morphTargets = true;
-                mesh.scale.set(4, 4, 4);
+                //mesh.MeshLambertMaterial.morphTargets = true;          
+               mesh.scale.set(4, 4, 4);
                 mesh.rotation.x = -Math.PI / 2;
                 mesh.castShadow = true;
-                mesh.receiveShadow = false;
-
+                 mesh.receiveShadow = false;
+               
                 //Morph Target Array set
                 /*mesh.morphTargets[0] = {
                     name: 't1',
@@ -254,14 +303,52 @@
 
                 //mesh.geometry.computeMorphNormals(); //Morph NORMALS
 
-                scene.add(mesh);
-            });
-
+  //            scene.add(mesh);
+   //         });
+            
+///#region MorphViaCube_Position
             /*cube.position.x = 45;
             cube.position.y = 20;
             cube.position.z = 50;
             scene.add(cube);*/
+///#endregion
 
+/*var loader = new THREE.JSONLoader();
+loader.load("../assets/models/n64.json", function ( geometry, materials ) {
+    var mesh = new THREE.Mesh(geometry.geometry, new THREE.MeshLambertMaterial(materials) );
+    mesh.scale.set(15, 15, 15);
+                mesh.position.x = -45;
+                mesh.position.y = 20;
+                mesh.position.z = 31;
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.castShadow = true;
+                 mesh.receiveShadow = false;
+    scene.add(mesh);
+    console.log("loaded");
+
+});*/
+
+/*var objectLoader = new THREE.ObjectLoader();
+objectLoader.load("../assets/models/json/n64.json", function (obj) {
+obj.scale.set(10, 10, 10);
+                obj.rotation.x = -Math.PI / 2;
+                obj.castShadow = true;
+                 obj.receiveShadow = false;
+                 obj.position.x = -45;
+                obj.position.y = 20;
+                obj.position.z = 31;
+scene.add(obj);
+} );*/
+
+/*var loader = new THREE.JSONLoader();
+        loader.load('../assets/models/horse.js', function (geometry, mat) {
+
+            var mat = new THREE.MeshLambertMaterial(
+                    {
+                        morphTargets: true,
+                        vertexColors: THREE.FaceColors
+                    });
+        });
 
             plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
             plane.scale.x = 100;
@@ -269,11 +356,9 @@
             plane.rotation.x = -Math.PI * .5;
             plane.receiveShadow = true;
 
-            scene.add(plane);
-
-
-            //plane.receiveShadow = true;
-
+            scene.add(plane);*/
+        
+///#region LoadingCollada_Reference
             //var loader = new THREE.ColladaLoader();
             /*loader.options.convertUpAxis = true;
             loader.load("../assets/models/dae/army-man-dae.dae", function colladaReady(collada) {
@@ -285,7 +370,7 @@
                 model.scale.set(10.0, 10.0, 10.0);
                 model.updateMatrix();
             });*/
-
+///#endregion
             render();
 
             function createMesh(geom) {
@@ -293,7 +378,7 @@
                 // assign two materials
                 //            var meshMaterial = new THREE.MeshLambertMaterial({color: 0xff5555});
                 //            var meshMaterial = new THREE.MeshNormalMaterial();
-                var meshMaterial = new THREE.MeshPhongMaterial({
+                var meshMaterial = new THREE.MeshLambertMaterial({
                     specular: 0xffffff,
                     color: 0xeeffff,
                     shininess: 100,
@@ -305,13 +390,38 @@
 
                 return plane;
             }
+/*function onDocumentMouseDown(event) {
+    this.Flatten^=true;
+            if(this.Flatten == 1)
+            {
+                    console.log("Flat");
 
+            var scaleY = Math.abs(Math.cos(0.1 / 5));
+            mesh.scale.set(4, 0.2, 4);
+            }
+            else{
+                //this.Flatten = true;
+                    console.log("Restore");
+            mesh.scale.set(4, 4, 4);
+            }
+
+}*/
+
+/*function onResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+*/
             function render() {
                 stats.update();
 
                 camera.position.x = controls.cameraPX;
                 camera.position.y = controls.cameraPY;
                 camera.position.z = controls.cameraPZ;
+///#region Render_Controls
                 //mesh.material.Set(cubeMaterial);
 
                 //mesh.scale.set(controls.modelPX, controls.modelPY, controls.modelPZ);
@@ -320,10 +430,13 @@
                 //mesh.position.z = controls.modelPZ;
 
                 // render using requestAnimationFrame
+                //lightHelper.update();
+				//shadowCameraHelper.update();
+
                 requestAnimationFrame(render);
                 webGLRenderer.render(scene, camera);
             }
-
+///#endregion
             function initStats() {
 
                 var stats = new Stats();
