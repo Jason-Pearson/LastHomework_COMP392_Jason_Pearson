@@ -3,14 +3,13 @@
 <html>
 
 <head>
-    <title>LastHomework_COMP392_Jason_Pearson - Apr 27, 2018</title>
+    <title>LastHomework_COMP392_Jason_Pearson - Apr 27, 2018 </title>
     <script type="text/javascript" src="../libs/three.js"></script>
-    <script type="text/javascript" src="../libs/ColladaLoader.js"></script>
-	<script type="text/javascript" src="../libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="../libs/PLYLoader.js"></script>
 
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
-    <script type="text/javascript" src="../libs/Projector.js"></script>    
+    <script type="text/javascript" src="../libs/tween.min.js"></script>
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -19,79 +18,54 @@
         }
     </style>
 </head>
-
 <body>
 
-    <div id="Stats-output">
-    </div>
-    <!-- Div which will hold the Output -->
-    <div id="WebGL-output">
-    </div>
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
 
-    <!-- Javascript code that runs our Three.js examples -->
-    <script type="text/javascript">
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
 
-    //Global Variables
-   var stats, scene,webGLRenderer, camera, projector;
-   var spotLight, spotLightHelper, shadowCameraHelper;
-        // once everything is loaded, we run our Three.js stuff.
-        function init() {
+    // once everything is loaded, we run our Three.js stuff.
+    function init() {
 
-             stats = initStats();
+        var stats = initStats();
 
-            // create a scene, that will hold all our elements such as objects, cameras and lights.
-             scene = new THREE.Scene();
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
 
-            // create a camera, which defines where we're looking at.
-             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-            // create a render and set the size
-            webGLRenderer = new THREE.WebGLRenderer();
+        // create a render and set the size
+        var webGLRenderer = new THREE.WebGLRenderer();
             webGLRenderer.setClearColor(new THREE.Color(0xcccccc, 1.0));
             webGLRenderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
             webGLRenderer.shadowMapEnabled = true;
             webGLRenderer.shadowMapType = THREE.PCFSoftShadowMap;
-//renderer.gammaInput = true;
-//			renderer.gammaOutput = true;
-            //webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+        // position and point the camera to the center of the scene
+        camera.position.x = 10;
+        camera.position.y = 10;
+        camera.position.z = 10;
+        camera.lookAt(new THREE.Vector3(0, -2, 0));
 
-            // position and point the camera to the center of the scene
-            camera.position.x = 120;
-            camera.position.y = 350;
-            camera.position.z = 50;
-            camera.lookAt(new THREE.Vector3(55, 25, 0));
-
-            //create a projector for Mouse EventHandlers
-            var projector = new THREE.Projector();
-            //document.addEventListener('mousedown', onDocumentMouseDown, true);
-            //document.addEventListener('mousemove', onDocumentMouseMove, false);
-            //document.addEventListener('mouseover', onDocumentMouseOver, false);
-
-            // add spotlight for the shadows
-            spotLight = new THREE.SpotLight(0xffffff);
-            spotLight.position.set(-46, 279, 41);
-            spotLight.intensity = 5;
+        // add spotlight for the shadows
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-100, 20, 20);
+        spotLight.intensity = 5;
             spotLight.angle = Math.PI / 4;
 				spotLight.penumbra = 0.05;
 				spotLight.decay = 2;
 				spotLight.distance = 200;
 
-            spotLight.castShadow = true; // default false
+                spotLight.castShadow = true; // default false
 spotLight.shadowDarkness = 1;
-spotLight.shadowCameraVisible = true;
-
-//spotLight.shadowMapSize.width = 1024;
-				//spotLight.shadowMapSize.height = 1024;
-				//spotLight.shadowCamera.near = 10;
-				//spotLight.shadowCamera.far = 200;
-            scene.add(spotLight);
-            //Create a helper for the shadow camera (optional)
-            spotLightHelper = new THREE.SpotLightHelper(spotLight);
-            scene.add(spotLightHelper);
-
-            var ambient = new THREE.AmbientLight( 0xaaaaaa, 0.1 );
-				scene.add( ambient );
+spotLight.shadowCameraVisible = true; //blocks the screen
+        scene.add(spotLight);
 ///#region LightShadows
             //Set up shadow properties for the light
             //light.shadow.mapSize.width = 512; // default
@@ -99,30 +73,33 @@ spotLight.shadowCameraVisible = true;
             //light.shadow.camera.near = 0.5; // default
             //light.shadow.camera.far = 500 // default
 ///#endregion
-            // add the output of the renderer to the html element
-           // document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
-            var plane;
-            var step = 0;
-            var Flatten = true;
-/*
-                var orbControls = new THREE.OrbitControls(camera, webGLRenderer.domElement);
-				orbControls.addEventListener( 'change', render );
-				orbControls.minDistance = 20;
-				orbControls.maxDistance = 500;
-				orbControls.enablePan = false;
-*/
-            var controls = new function() {
+var spotLightHelper = new THREE.SpotLightHelper(spotLight);
+            scene.add(spotLightHelper);
+
+        var ambient = new THREE.AmbientLight( 0xaaaaaa ); // soft white light
+scene.add( ambient );
+
+        // add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+        // call the render function
+        var step = 0;
+       var mesh = new THREE.Object3D();
+        var loadedGeometry;
+
+        // setup the control gui
+        var controls = new function() {
                 //this.keyframe = 0;
                 this.Flatten = true;
                 
                 this.spotLightColor = "#ffffff";
-                this.spotLightWidth = -46;
-                this.spotLightHeight = 279;
-                this.spotLightLength = 41;
+                this.spotLightWidth = -100;
+                this.spotLightHeight = 37;
+                this.spotLightLength = 2;
                 //this.spotLightRadius = 2;
-                this.cameraPX = 107;
-                this.cameraPY = 500;
-                this.cameraPZ = -12;
+                this.cameraPX = 20;
+                this.cameraPY = 20;
+                this.cameraPZ = 20;
                 this.modelPX = -45;
                 this.modelPY = 20;
                 this.modelPZ = 31;
@@ -130,7 +107,7 @@ spotLight.shadowCameraVisible = true;
                 this.modelRY = 0;
                 this.modelRZ = 5;
                 this.planePX = 42;
-                this.planePY = 31;
+                this.planePY = -34;
                 this.planePZ = 9;
                 //this.planeRX = 0;
                 this.planeRY = 0;
@@ -148,33 +125,38 @@ spotLight.shadowCameraVisible = true;
                 };*/
             };
 
-            var gui = new dat.GUI();
-
-            gui.addColor(controls, 'spotLightColor').onChange((c) => {
+var gui = new dat.GUI();
+gui.addColor(controls, 'spotLightColor').onChange((c) => {
                 spotLight.color = new THREE.Color(c);
             });
-            gui.add(controls, 'spotLightWidth', -1000, 1000).onChange(() => {
+            gui.add(controls, 'spotLightWidth', -100, 100).onChange(() => {
                 spotLight.position.x = controls.spotLightWidth;
             });
-            gui.add(controls, 'spotLightHeight', -1000, 1000).onChange(() => {
+            gui.add(controls, 'spotLightHeight', -100, 100).onChange(() => {
                 spotLight.position.y = controls.spotLightHeight;
             });
-            gui.add(controls, 'spotLightLength', -1000, 1000).onChange(() => {
+            gui.add(controls, 'spotLightLength', -100, 100).onChange(() => {
                 spotLight.position.z = controls.spotLightLength;
             });
 
             //Camera
-            gui.add(controls, 'cameraPX', -1000, 1000)
-            gui.add(controls, 'cameraPY', -2000, 2000)
-            gui.add(controls, 'cameraPZ', -1000, 1000)
+            gui.add(controls, 'cameraPX', -50, 50).onChange(() => {
+                camera.position.x = controls.cameraPX;
+            });
+            gui.add(controls, 'cameraPY', -50, 50).onChange(() => {
+                camera.position.y = controls.cameraPY;
+                });
+            gui.add(controls, 'cameraPZ', -50, 50).onChange(() => {
+                camera.position.z = controls.cameraPZ;
+                });
                 //Model Controls
-            gui.add(controls, 'modelPX', -500, 500).onChange(() => {
+            gui.add(controls, 'modelPX', -50, 50).onChange(() => {
                 mesh.position.x = controls.modelPX;
             });
-            gui.add(controls, 'modelPY', -500, 500).onChange(() => {
+            gui.add(controls, 'modelPY', -50, 50).onChange(() => {
                 mesh.position.y = controls.modelPY;
             });
-            gui.add(controls, 'modelPZ', -500, 500).onChange(() => {
+            gui.add(controls, 'modelPZ', -50, 50).onChange(() => {
                 mesh.position.z = controls.modelPZ;
             });
             /*gui.add(controls, 'modelRX', 0, 1).onChange(() => {
@@ -208,179 +190,74 @@ spotLight.shadowCameraVisible = true;
             gui.add(controls, 'Flatten').onChange((toggle) => {
                 //document.addEventListener('mousedown', onDocumentMouseDown, toggle);
                 });
-                
-///#region MorphViaCube_Controls           //Morph Control
-            /*gui.add(controls, 'influence', 0, 1).step(0.01).onChange(function(value) {
-                cube.morphTargetInfluences[0] = value;
+
+
+ 
+
+
+        // create a tween
+        // http://sole.github.io/tween.js/examples/03_graphs.html
+        var posSrc = {pos: 1};
+        var tween = new TWEEN.Tween(posSrc).to({pos: 0}, 5000);
+        tween.easing(TWEEN.Easing.Sinusoidal.InOut);
+
+        var tweenBack = new TWEEN.Tween(posSrc).to({pos: 1}, 5000);
+        tweenBack.easing(TWEEN.Easing.Sinusoidal.InOut);
+
+        tween.chain(tweenBack);
+        tweenBack.chain(tween);
+
+
+        var onUpdate = function () {
+            var count = 0;
+            var pos = this.pos;
+
+            loadedGeometry.vertices.forEach(function (e) {
+                var newY = ((e.y + 3.22544) * pos) - 3.22544;
+                mesh.geometry.vertices[count++].set(e.x, newY, e.z);
+                mesh.geometry.verticesNeedUpdate = true;
             });
-            gui.add(controls, 'Morph2', 0, 1).onChange(controls.update);*/
-///#endregion
+        };
 
-            // model from https://clara.io/view/1a5cdc65-d1e2-4e7d-998f-a75288fbe3b4
-            //var loader = new THREE.ColladaLoader();
+        tween.onUpdate(onUpdate);
+        tweenBack.onUpdate(onUpdate);
 
-            //var mesh;
-            
-///#region MorphViaCube_Variables_Vertices
-            //Morph Target -----
-            /*var cubeTarget = new THREE.BoxGeometry(8, 2, 8);
-            var cubeTarget1 = new THREE.BoxGeometry(2, 10, 2);
-            var cubeGeometry = new THREE.BoxGeometry(50, 50, 50);
-            var cubeMaterial = new THREE.MeshLambertMaterial({
-                morphTargets: true,
-                color: 0xff0000
-            });*/
+        var loader = new THREE.PLYLoader();
 
-            /*for (var i = 0; i < 8; i++) {
+        loader.load("../assets/models/teapot.ply", function (geometry) {
+            loadedGeometry = geometry.clone();
+            loadedGeometry.dynamic = true;
 
-                var vertices = [];
+            var material = new THREE.MeshPhongMaterial({
+                color: 0x444444,
+                wireframe: true
+                //map: generateSprite()
+            });
 
-                for (var v = 0; v < geometry.vertices.length; v++) {
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.sortParticles = true;
 
-                    vertices.push(cubeGeometry.vertices[v].clone());
-
-                    if (v === i) {
-
-                        vertices[vertices.length - 1].x *= 2;
-                        vertices[vertices.length - 1].y *= 2;
-                        vertices[vertices.length - 1].z *= 2;
-
-                    }
-
-                }
-
-                cubeGeometry.morphTargets.push({
-                    name: "target" + i,
-                    vertices: vertices
-                });
-
-            }*/
-
-
-            /*cubeGeometry.morphTargets[0] = {
-                name: 't1',
-                vertices: cubeTarget.vertices
-            };
-            cubeGeometry.morphTargets[1] = {
-                name: 't2',
-                vertices: cubeTarget1.vertices
-            };
-            cubeGeometry.computeMorphNormals();
-            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);*/
-///#endregion
-
-            /*loader.load("../assets/models/dae/n64.dae", function(result) {
-                mesh = result.scene.children[0].clone();
-                var meshGeo = mesh.clone().geometry;
-                //mesh.vertices.update = true;
-                //mesh.geometry.normalsNeedUpdate = true;
-                //var geo = mesh.geometry;
-               var mat = new THREE.MeshLambertMaterial(
-                    {
-                        morphTargets: true,
-                        //vertexColors: THREE.FaceColors
-                    });                
-                //mesh = new THREE.Mesh(meshGeo, cubeMaterial);
-                //mesh.geometry.Set(cubeGeometry);
-                //mesh.material = mat;
-                //mesh.material.set(mat);
-
-                //mesh.MeshLambertMaterial.morphTargets = true;          
-               mesh.scale.set(4, 4, 4);
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.castShadow = true;
-                 mesh.receiveShadow = false;
-               
-                //Morph Target Array set
-                /*mesh.morphTargets[0] = {
-                    name: 't1',
-                    vertices: cubeTarget.vertices
-                };*/
-                /*mesh.geometry.morphTargets[1] = {
-                    name: 't1',
-                    vertices: cubeTarget1.vertices
-                };*/
-
-                //mesh.geometry.computeMorphNormals(); //Morph NORMALS
-
-  //            scene.add(mesh);
-   //         });
-            
-///#region MorphViaCube_Position
-            /*cube.position.x = 45;
-            cube.position.y = 20;
-            cube.position.z = 50;
-            scene.add(cube);*/
-///#endregion
-
-/*var loader = new THREE.JSONLoader();
-loader.load("../assets/models/n64.json", function ( geometry, materials ) {
-    var mesh = new THREE.Mesh(geometry.geometry, new THREE.MeshLambertMaterial(materials) );
-    mesh.scale.set(15, 15, 15);
-                mesh.position.x = -45;
-                mesh.position.y = 20;
-                mesh.position.z = 31;
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.castShadow = true;
-                 mesh.receiveShadow = false;
-    scene.add(mesh);
-    console.log("loaded");
-
-});*/
-
-/*var objectLoader = new THREE.ObjectLoader();
-objectLoader.load("../assets/models/json/n64.json", function (obj) {
-obj.scale.set(10, 10, 10);
-                obj.rotation.x = -Math.PI / 2;
-                obj.castShadow = true;
-                 obj.receiveShadow = false;
-                 obj.position.x = -45;
-                obj.position.y = 20;
-                obj.position.z = 31;
-scene.add(obj);
-} );*/
-
-/*var loader = new THREE.JSONLoader();
-        loader.load('../assets/models/horse.js', function (geometry, mat) {
-
-            var mat = new THREE.MeshLambertMaterial(
-                    {
-                        morphTargets: true,
-                        vertexColors: THREE.FaceColors
-                    });
+            tween.start();
+            scene.add(mesh);
         });
 
-            plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
+var plane = createMesh(new THREE.PlaneGeometry(20, 20, 2, 2));
+            plane.position.y = -34;
             plane.scale.x = 100;
             plane.scale.y = 100;
             plane.rotation.x = -Math.PI * .5;
             plane.receiveShadow = true;
 
-            scene.add(plane);*/
-        
-///#region LoadingCollada_Reference
-            //var loader = new THREE.ColladaLoader();
-            /*loader.options.convertUpAxis = true;
-            loader.load("../assets/models/dae/army-man-dae.dae", function colladaReady(collada) {
-
-                model = collada.scene;
-                model_geometry = collada.scene.children[0].geometry;
-                model_material = collada.scene.children[0].material;
-
-                model.scale.set(10.0, 10.0, 10.0);
-                model.updateMatrix();
-            });*/
-///#endregion
-            render();
-
-            function createMesh(geom) {
+            scene.add(plane);
+        render();
+function createMesh(geom) {
 
                 // assign two materials
                 //            var meshMaterial = new THREE.MeshLambertMaterial({color: 0xff5555});
                 //            var meshMaterial = new THREE.MeshNormalMaterial();
                 var meshMaterial = new THREE.MeshLambertMaterial({
                     specular: 0xffffff,
-                    color: 0xeeffff,
+                    color: 0x555555,
                     shininess: 100,
                     metal: true
                 });
@@ -390,70 +267,52 @@ scene.add(obj);
 
                 return plane;
             }
-/*function onDocumentMouseDown(event) {
-    this.Flatten^=true;
-            if(this.Flatten == 1)
-            {
-                    console.log("Flat");
+        // from THREE.js examples
+        function generateSprite() {
 
-            var scaleY = Math.abs(Math.cos(0.1 / 5));
-            mesh.scale.set(4, 0.2, 4);
-            }
-            else{
-                //this.Flatten = true;
-                    console.log("Restore");
-            mesh.scale.set(4, 4, 4);
-            }
+            var canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
 
-}*/
+            var context = canvas.getContext('2d');
+            var gradient = context.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.2, 'rgba(0,255,255,1)');
+            gradient.addColorStop(0.4, 'rgba(0,0,64,1)');
+            gradient.addColorStop(1, 'rgba(0,0,0,1)');
 
-/*function onResize() {
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, canvas.width, canvas.height);
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+            var texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-*/
-            function render() {
-                stats.update();
-
-                camera.position.x = controls.cameraPX;
-                camera.position.y = controls.cameraPY;
-                camera.position.z = controls.cameraPZ;
-///#region Render_Controls
-                //mesh.material.Set(cubeMaterial);
-
-                //mesh.scale.set(controls.modelPX, controls.modelPY, controls.modelPZ);
-                //mesh.position.x = controls.modelPX;
-                //mesh.position.y = controls.modelPY;
-                //mesh.position.z = controls.modelPZ;
-
-                // render using requestAnimationFrame
-                //lightHelper.update();
-				//shadowCameraHelper.update();
-
-                requestAnimationFrame(render);
-                webGLRenderer.render(scene, camera);
-            }
-///#endregion
-            function initStats() {
-
-                var stats = new Stats();
-                stats.setMode(0); // 0: fps, 1: ms
-
-                // Align top-left
-                stats.domElement.style.position = 'absolute';
-                stats.domElement.style.left = '0px';
-                stats.domElement.style.top = '0px';
-
-                document.getElementById("Stats-output").appendChild(stats.domElement);
-
-                return stats;
-            }
         }
-        window.onload = init;
-    </script>
-</body>
 
+        function render() {
+            stats.update();
+            TWEEN.update();
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+        function initStats() {
+
+            var stats = new Stats();
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
 </html>
